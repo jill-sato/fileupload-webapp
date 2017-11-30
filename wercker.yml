@@ -1,0 +1,37 @@
+box: python:2.7-slim
+
+dev:
+  steps:
+    - pip-install
+    - internal/watch:
+        code: python app.py
+        reload: true
+
+build:
+  steps:
+    - pip-install
+    - internal/docker-push:
+        email: ${DOCKER_EMAIL}
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
+        repository: rgrecour/fileupload-webapp
+        tag: ${WERCKER_GIT_COMMIT:0:7}
+        entrypoint: python
+        cmd: "app.py"
+        ports: "5000, 8080"
+
+test1:
+  steps:
+    - pip-install
+    - script:
+        code: |
+          python app.py &
+          sleep 2 ; python app_tests.py --test=test1
+
+test2:
+  steps:
+    - pip-install
+    - script:
+        code: |
+          python app.py &
+          sleep 2 ; python app_tests.py --test=test2

@@ -1,8 +1,5 @@
-FROM ubuntu:latest
-RUN apt-get update -y
-RUN apt-get install -y python-pip python-dev build-essential
+FROM python:alpine
 COPY . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
-ENTRYPOINT ["python"]
-CMD ["app.py"]
+RUN pip3 install -r requirements.txt
+CMD ["python3", "-u", "src/main/app.py"]

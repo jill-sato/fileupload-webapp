@@ -1,0 +1,37 @@
+box: python:alpine
+
+dev:
+  steps:
+    - pip-install
+    - internal/watch:
+        code: python app.py
+        reload: true
+
+build:
+  steps:
+    - pip-install
+    - internal/docker-push:
+        email: ${DOCKER_EMAIL}
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
+        repository: ${DOCKER_USERNAME}/fileupload-webapp
+        tag: ${WERCKER_GIT_COMMIT:0:7}
+        cmd: python3 -u src/main/app.py
+        ports: "5000, 8080"
+
+test1:
+  steps:
+    - pip-install
+    - script:
+        code: |
+          python3 src/main/app.py &
+          sleep 2 ; python3 src/test/app_test.py
+
+test2:
+  steps:
+    - pip-install
+    - script:
+        code: |
+          apk update ; apk add bash curl
+          python3 src/main/app.py &
+          sleep 2 ; bash src/test/curl_test.sh

@@ -1,0 +1,34 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: fileupload-webapp
+  labels:
+    app: fileupload-webapp
+spec:
+  type: NodePort
+  selector:
+    app: fileupload-webapp
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: fileupload-webapp
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: fileupload-webapp
+        version: v1
+    spec:
+      containers:
+      - name: fileupload-webapp
+        image: jillsato/fileupload-webapp:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+---

@@ -42,11 +42,7 @@ spec:
       }
       steps {
         container('python-alpine') {
-          sh """
-            apk add make bash
-            pip3 install -r requirements.txt
-            make test
-          """
+          sh "./ci-pipeline.sh"
           //archiveArtifacts artifacts: 'bundles/*.zip'
           //stash includes: 'bundles/*', name: 'build-bundles'
         }

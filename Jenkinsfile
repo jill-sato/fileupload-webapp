@@ -1,41 +1,50 @@
 pipeline {
-  // See https://groups.google.com/forum/#!topic/jenkinsci-users/y_IOIxXb4T8
-  agent any
-  // XXX should use a node with a label 'docker'
-  // agent { label 'docker' }
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '5'))
+    preserveStashes()
+  }
+  agent {
+    kubernetes {
+      label "${env.label}"
+      defaultContainer 'jnlp'
+      yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+spec:
+  containers:
+  - name: python-alpine
+    image: python:alpine
+    args:
+    - cat
+    tty: true
+    imagePullPolicy: Always
+#    resources:
+#      limits:
+#        memory: "8Gi"
+#        cpu: "1.75"
+"""
+    }
+  }
   environment {
-    DOCKER_USERNAME = credentials('DOCKER_USERNAME')
-    DOCKER_PASSWORD = credentials('DOCKER_PASSWORD')
-    // the following variable is used by the Makefile for the local image name
-    // making it unique to avoid conflicts with concurrent runs
-    LOCAL_IMAGE_NAME = 'fileupload-webapp:${BUILD_TAG}'
+    FOO = "BAR"
   }
   stages {
-    stage('Init') {
-      // XXX assuming alpine
-      steps {
-        sh '''if [ ! -z "${http_proxy}" ] ; then  export http_proxy="http://${http_proxy##*://}" ; fi
-if [ ! -z "${HTTP_PROXY}" ] ; then  export HTTP_PROXY="http://${HTTP_PROXY##*://}" ; fi
-apk update
-apk add bash make'''
+    stage('build') {
+      agent {
+        kubernetes {
+          label "${env.label}"
+        }
       }
-    }
-    stage('Build') {
       steps {
-        sh 'make NOCACHE=true clean docker-build'
-      }
-    }
-    stage('Test') {
-      steps {
-        sh 'make test-docker'
-      }
-    }
-    stage('Push') {
-      steps {
-        sh '''docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
-SHORT_COMMIT_ID=$(git rev-parse --short HEAD)
-export IMAGE_NAME="${DOCKER_USERNAME}/fileupload-webapp:b${BUILD_ID}-${SHORT_COMMIT_ID}"
-make docker-push'''
+        container('python-alpine') {
+          sh """
+            apk add make bash
+            make test
+          """
+          //archiveArtifacts artifacts: 'bundles/*.zip'
+          //stash includes: 'bundles/*', name: 'build-bundles'
+        }
       }
     }
   }

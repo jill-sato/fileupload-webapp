@@ -44,6 +44,7 @@ spec:
         container('python-alpine') {
           sh """
             apk add make bash
+            pip3 install -r requirements.txt
             make test
           """
           //archiveArtifacts artifacts: 'bundles/*.zip'
